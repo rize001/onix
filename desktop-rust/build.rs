@@ -6,6 +6,7 @@ fn main() {
     println!("cargo:rerun-if-changed=assets/onix-logo.svg");
 
     let mut source = fs::read_to_string("ui/app-window.slint").expect("cannot read Slint UI");
+    source = source.replace("\r\n", "\n");
     for (from, to) in [
         ("clicked => root.register-mode = false;", "clicked => { root.register-mode = false; }"),
         ("clicked => root.register-mode = true;", "clicked => { root.register-mode = true; }"),
@@ -35,7 +36,7 @@ fn main() {
     let old_end = "\n    if root.authenticated: app-page := Rectangle {";
     let start = source.find(old_start).expect("old login start not found");
     let end = source[start..].find(old_end).map(|offset| start + offset).expect("old login end not found");
-    let login = fs::read_to_string("ui/login-v162.fragment").expect("cannot read v162 login fragment");
+    let login = fs::read_to_string("ui/login-v162.fragment").expect("cannot read v162 login fragment").replace("\r\n", "\n");
     source.replace_range(start..end, login.trim_end());
     source = source.replace("export component AppWindow inherits Window", "export component OnixWindow inherits Window");
 
