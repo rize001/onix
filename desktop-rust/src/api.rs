@@ -22,7 +22,7 @@ impl ApiClient {
     pub fn session(&self) -> String { self.session.lock().clone() }
     fn decorate(&self, req: RequestBuilder) -> RequestBuilder {
         let token = self.session.lock().clone();
-        let req = req.header(ACCEPT, "application/json").header(USER_AGENT, "OnixMessengerRust/161 Windows");
+        let req = req.header(ACCEPT, "application/json").header(USER_AGENT, "OnixMessengerRust/162 Windows");
         if token.is_empty() { req } else { req.header(COOKIE, format!("ONIXSESSID={token}")) }
     }
     fn capture_session(&self, response: &Response) {
@@ -58,7 +58,16 @@ impl ApiClient {
             .header(CONTENT_TYPE, "application/json; charset=utf-8").json(&payload).send()?;
         self.decode(response)
     }
-    pub fn health(&self) -> Result<()> { let _: Envelope = self.get("/api/health")?; Ok(()) }
+    pub fn health(&self) -> Result<()> {
+        let value: Value = self.get("/api/health")?;
+        let healthy = value.get("ok").and_then(Value::as_bool).unwrap_or(false)
+            || value.get("status").and_then(Value::as_str) == Some("ok");
+        if healthy {
+            Ok(())
+        } else {
+            Err(anyhow!("endpoint /api/health вернул неожиданный ответ"))
+        }
+    }
     pub fn login(&self, identifier: &str, password: &str) -> Result<User> {
         Ok(self.post::<LoginResponse>("/api/v2/login", json!({"identifier": identifier.trim(), "password": password}))?.user)
     }
@@ -82,6 +91,9 @@ impl ApiClient {
     }
     pub fn mark_read(&self, conversation_id: i64) -> Result<()> {
         let _: Envelope = self.post("/api/v2/messages/mark-read", json!({"conversationId": conversation_id}))?; Ok(())
+    }
+    pub fn react(&self, message_id: i64, reaction: &str) -> Result<()> {
+        let _: Envelope = self.post("/api/v2/react", json!({"messageId": message_id, "reaction": reaction}))?; Ok(())
     }
     pub fn create_conversation(&self, kind: &str, title: &str, description: &str) -> Result<Conversation> {
         Ok(self.post::<SingleConversationResponse>("/api/v2/conversations/create", json!({
