@@ -29,6 +29,6 @@ jobs:
           (Get-FileHash dist/OnixMessenger/OnixMessenger.exe -Algorithm SHA256).Hash.ToLower() + "  OnixMessenger.exe" | Set-Content dist/OnixMessenger/SHA256.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: OnixMessenger-v161-rust-slint-windows-x64
+          name: OnixMessenger-v162-rust-slint-windows-x64
           path: dist/OnixMessenger
           if-no-files-found: error
