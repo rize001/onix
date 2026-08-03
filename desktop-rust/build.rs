@@ -2,6 +2,7 @@ use std::{fs, path::PathBuf};
 
 fn main() {
     println!("cargo:rerun-if-changed=ui/app-window.slint");
+    println!("cargo:rerun-if-changed=ui/app-window-v162.slint");
     println!("cargo:rerun-if-changed=assets/onix-logo.svg");
 
     let mut source = fs::read_to_string("ui/app-window.slint").expect("cannot read Slint UI");
@@ -32,5 +33,5 @@ fn main() {
 
     let generated = PathBuf::from("ui/app-window.generated.slint");
     fs::write(&generated, source).expect("cannot write generated Slint UI");
-    slint_build::compile(generated).expect("Slint UI compilation failed");
+    slint_build::compile("ui/app-window-v162.slint").expect("Slint UI compilation failed");
 }
