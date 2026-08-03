@@ -1,0 +1,88 @@
+    Rectangle {
+        background: @radial-gradient(circle, #6d47ff4c 0%, transparent 62%);
+        x: -180px; y: 80px; width: 720px; height: 720px; border-radius: 360px;
+    }
+    Rectangle {
+        background: @radial-gradient(circle, #743cff3d 0%, transparent 66%);
+        x: parent.width - 410px; y: 260px; width: 650px; height: 650px; border-radius: 325px;
+    }
+
+    if !root.authenticated: login-page := Rectangle {
+        background: @linear-gradient(150deg, #090714f5, #100a1cf2 55%, #080611f5);
+
+        login-titlebar := Rectangle {
+            x: 0px; y: 0px; width: parent.width; height: 56px;
+            background: #090713f2; border-width: 1px; border-color: #ffffff0d;
+            HorizontalLayout { padding-left: 20px; spacing: 10px;
+                Image { source: @image-url("../assets/onix-logo.svg"); width: 30px; height: 30px; image-fit: contain; vertical-alignment: center; }
+                Text { text: "Onix Messenger"; color: #f4f1fa; font-size: 16px; font-weight: 600; vertical-alignment: center; }
+                login-drag := TouchArea { horizontal-stretch: 1; pointer-event(event) => { if (event.kind == PointerEventKind.down) { root.drag-window(); } } }
+                IconButton { icon: "—"; width: 48px; height: 42px; clicked => root.minimize-window(); }
+                IconButton { icon: "□"; width: 48px; height: 42px; clicked => root.maximize-window(); }
+                IconButton { icon: "×"; width: 48px; height: 42px; clicked => root.close-window(); }
+            }
+        }
+
+        login-card := Rectangle {
+            width: 710px; height: root.register-mode ? 770px : 690px;
+            x: (parent.width - self.width) / 2;
+            y: root.register-mode ? 74px : 104px;
+            border-radius: 38px;
+            background: @linear-gradient(145deg, #19142fe8, #0c0c20f7);
+            border-width: 1px; border-color: #896dff70;
+            drop-shadow-blur: 52px; drop-shadow-color: #000000b0; drop-shadow-offset-y: 18px;
+
+            Rectangle {
+                x: 1px; y: 1px; width: parent.width - 2px; height: 172px; border-radius: 37px;
+                background: @linear-gradient(180deg, #7951ff16, transparent);
+            }
+
+            VerticalLayout { padding-left: 44px; padding-right: 44px; padding-top: 34px; padding-bottom: 28px; spacing: 14px;
+                HorizontalLayout { height: 112px; spacing: 26px;
+                    Rectangle { width: 112px; height: 112px; border-radius: 32px;
+                        background: @radial-gradient(circle, #2796ff55 0%, #6d39ff20 62%, transparent 78%);
+                        drop-shadow-blur: 24px; drop-shadow-color: #4b55ff88;
+                        Image { source: @image-url("../assets/onix-logo.svg"); x: 8px; y: 8px; width: 96px; height: 96px; image-fit: contain; }
+                    }
+                    VerticalLayout { alignment: center; spacing: 7px;
+                        Text { text: "Onix (OX)"; color: #fbfaff; font-size: 43px; font-weight: 800; }
+                        Text { text: "Приватные диалоги для своих людей"; color: #aaa4bb; font-size: 17px; }
+                    }
+                }
+
+                Rectangle { height: 70px; border-radius: 24px; background: #ffffff05; border-width: 1px; border-color: #ffffff08;
+                    HorizontalLayout { padding: 7px; spacing: 7px;
+                        PillButton { text: "Вход"; active: !root.register-mode; width: 50%; height: 56px; clicked => { root.register-mode = false; } }
+                        PillButton { text: "Регистрация"; active: root.register-mode; width: 50%; height: 56px; clicked => { root.register-mode = true; } }
+                    }
+                }
+
+                if root.register-mode: HorizontalLayout { height: 90px; spacing: 14px;
+                    VerticalLayout { spacing: 7px; Text { text: "Имя"; color: #c9c3d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-name-value; placeholder: "Ваше имя"; icon: "●"; height: 64px; } }
+                    VerticalLayout { spacing: 7px; Text { text: "Username"; color: #c9c3d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-username-value; placeholder: "@username"; icon: "@"; height: 64px; } }
+                }
+
+                VerticalLayout { height: 92px; spacing: 7px;
+                    Text { text: "Email или username"; color: #c9c3d8; font-size: 14px; font-weight: 600; }
+                    Field { value <=> root.login-email-value; placeholder: "you@example.com или @username"; icon: "✉"; height: 66px; }
+                }
+
+                HorizontalLayout { height: 92px; spacing: 14px;
+                    VerticalLayout { spacing: 7px; Text { text: "Пароль"; color: #c9c3d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-pass-value; placeholder: "Ваш пароль"; icon: "▣"; password: true; height: 66px; } }
+                    if root.register-mode: VerticalLayout { spacing: 7px; Text { text: "Повторите пароль"; color: #c9c3d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-confirm-value; placeholder: "Ещё раз"; icon: "▣"; password: true; height: 66px; } }
+                }
+
+                if !root.register-mode: HorizontalLayout { height: 34px;
+                    Text { text: "Войти по QR-коду"; color: #aa8cff; font-size: 14px; font-weight: 700; vertical-alignment: center; qr := TouchArea { clicked => root.simple-action("qr"); mouse-cursor: pointer; } }
+                    Rectangle { horizontal-stretch: 1; }
+                    Text { text: "Забыли пароль?"; color: #aa8cff; font-size: 14px; font-weight: 700; vertical-alignment: center; forgot := TouchArea { clicked => root.simple-action("forgot"); mouse-cursor: pointer; } }
+                }
+
+                PrimaryButton { text: root.register-mode ? "Создать аккаунт" : "Войти";
+                    clicked => { if (root.register-mode) { root.register(root.login-name-value, root.login-email-value, root.login-username-value, root.login-pass-value, root.login-confirm-value); } else { root.login(root.login-email-value, root.login-pass-value); } }
+                }
+
+                Text { text: root.login-status; color: root.status-error ? #ff7b8e : #a49caf; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; wrap: word-wrap; }
+            }
+        }
+    }
