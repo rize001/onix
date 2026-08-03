@@ -112,6 +112,7 @@ impl ChatItem {
 }
 
 #[derive(Debug, Default, Deserialize)]
+#[serde(default)]
 pub struct Envelope { pub ok: bool, pub message: String }
 #[derive(Debug, Default, Deserialize)] pub struct LoginResponse { #[serde(flatten)] pub envelope: Envelope, pub user: User }
 #[derive(Debug, Default, Deserialize)] pub struct MeResponse { #[serde(flatten)] pub envelope: Envelope, pub user: User }
