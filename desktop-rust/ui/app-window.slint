@@ -1,0 +1,298 @@
+export struct ChatRow { title: string, preview: string, time: string, unread: int, avatar-text: string, kind: string }
+export struct MessageRow { sender: string, body: string, time: string, mine: bool, system: bool }
+
+component IconButton inherits Rectangle {
+    in property <string> icon;
+    callback clicked;
+    width: 42px; height: 42px; border-radius: 21px;
+    background: touch.has-hover ? #ffffff12 : #ffffff08;
+    border-width: 1px; border-color: touch.has-hover ? #8f70ff80 : #ffffff16;
+    Text { text: root.icon; color: #f5f1ff; font-size: 18px; horizontal-alignment: center; vertical-alignment: center; }
+    touch := TouchArea { clicked => root.clicked(); mouse-cursor: pointer; }
+}
+
+component PillButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> active: false;
+    callback clicked;
+    height: 38px; min-width: 72px; border-radius: 19px;
+    background: root.active ? @linear-gradient(120deg, #7651ff, #8f5cff) : (touch.has-hover ? #ffffff10 : #ffffff05);
+    border-width: 1px; border-color: root.active ? #a884ff : #ffffff18;
+    Text { text: root.text; color: root.active ? white : #c4bdd8; font-size: 14px; font-weight: 600; horizontal-alignment: center; vertical-alignment: center; }
+    touch := TouchArea { clicked => root.clicked(); mouse-cursor: pointer; }
+}
+
+component Field inherits Rectangle {
+    in-out property <string> value;
+    in property <string> placeholder;
+    in property <string> icon;
+    in property <bool> password: false;
+    height: 72px; border-radius: 22px; background: #ffffff06;
+    border-width: input.has-focus ? 2px : 1px; border-color: input.has-focus ? #825cff : #6f628d80;
+    HorizontalLayout { padding-left: 20px; padding-right: 18px; spacing: 14px;
+        Text { text: root.icon; color: #bcb2d7; font-size: 20px; vertical-alignment: center; }
+        Rectangle { horizontal-stretch: 1;
+            if root.value == "": Text { text: root.placeholder; color: #7f788f; font-size: 16px; vertical-alignment: center; }
+            input := TextInput { text <=> root.value; color: #f8f6ff; font-size: 16px; vertical-alignment: center; single-line: true; input-type: root.password ? InputType.password : InputType.text; }
+        }
+    }
+}
+
+component PrimaryButton inherits Rectangle {
+    in property <string> text;
+    callback clicked;
+    height: 58px; border-radius: 18px;
+    background: touch.pressed ? @linear-gradient(90deg, #ef4159, #f27080) : @linear-gradient(90deg, #ff4a5d, #ff7f8c);
+    drop-shadow-blur: 18px; drop-shadow-color: #ff536644; drop-shadow-offset-y: 5px;
+    Text { text: root.text; color: white; font-size: 17px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+    touch := TouchArea { clicked => root.clicked(); mouse-cursor: pointer; }
+}
+
+export component AppWindow inherits Window {
+    title: "Onix Messenger"; icon: @image-url("../assets/onix-logo.svg"); no-frame: true; resize-border-width: 7px;
+    preferred-width: 1440px; preferred-height: 900px; min-width: 1050px; min-height: 680px;
+    background: root.bg-deep;
+
+    in-out property <bool> authenticated: false;
+    in-out property <bool> register-mode: false;
+    in-out property <bool> status-error: false;
+    in-out property <string> login-status: "Подключение к Onix…";
+    in-out property <string> main-status: "";
+    in-out property <string> current-user-name: "Onix Admin";
+    in-out property <string> current-user-email: "";
+    in-out property <string> theme-name: "ember";
+    in-out property <bool> menu-pinned: false;
+    in-out property <string> filter-name: "all";
+    in-out property <int> active-chat-index: -1;
+    in-out property <string> active-chat-title: "";
+    in-out property <string> active-chat-subtitle: "";
+    in-out property <string> modal-kind: "";
+    in-out property <string> login-name-value: "";
+    in-out property <string> login-username-value: "";
+    in-out property <string> login-email-value: "";
+    in-out property <string> login-pass-value: "";
+    in-out property <string> login-confirm-value: "";
+    in-out property <string> create-title-value: "";
+    in-out property <string> create-description-value: "";
+    in property <[ChatRow]> chats;
+    in property <[MessageRow]> messages;
+
+    property <bool> menu-open: root.menu-pinned || menu-trigger.has-hover || side-hover.has-hover;
+    property <color> bg-deep: root.theme-name == "aurora" ? #071418 : root.theme-name == "midnight" ? #080b16 : root.theme-name == "violet" ? #0c091b : #100a16;
+    property <color> panel: root.theme-name == "aurora" ? #0c2526 : root.theme-name == "midnight" ? #10172a : #17132b;
+    property <color> panel-soft: root.theme-name == "aurora" ? #123032 : root.theme-name == "midnight" ? #172039 : #201a38;
+    property <color> accent: root.theme-name == "aurora" ? #31c9a6 : root.theme-name == "midnight" ? #4e8dff : #8158ff;
+    property <color> chat-bg-a: root.theme-name == "aurora" ? #082322 : root.theme-name == "midnight" ? #0a1025 : root.theme-name == "violet" ? #130f2f : #2b0715;
+    property <color> chat-bg-b: root.theme-name == "aurora" ? #113b36 : root.theme-name == "midnight" ? #151e3d : root.theme-name == "violet" ? #271453 : #501328;
+
+    callback login(string, string);
+    callback register(string, string, string, string, string);
+    callback select-chat(int);
+    callback send-message(string);
+    callback refresh;
+    callback logout;
+    callback create-conversation(string, string, string);
+    callback attach-file;
+    callback theme-changed(string);
+    callback simple-action(string);
+    callback close-window;
+    callback minimize-window;
+    callback maximize-window;
+    callback drag-window;
+
+    Rectangle {
+        background: @radial-gradient(circle, #6d47ff38 0%, transparent 48%);
+        x: -100px; y: 80px; width: 580px; height: 580px; border-radius: 290px;
+    }
+    if !root.authenticated: login-page := Rectangle {
+        background: transparent;
+        VerticalLayout { alignment: center; padding-top: 58px; padding-bottom: 42px;
+            login-card := Rectangle {
+                width: 710px; height: root.register-mode ? 800px : 700px; border-radius: 36px;
+                background: @linear-gradient(145deg, #18142dcc, #0d1026ee);
+                border-width: 1px; border-color: #866cff55;
+                drop-shadow-blur: 42px; drop-shadow-color: #00000099; drop-shadow-offset-y: 14px;
+                VerticalLayout { padding: 42px; spacing: 18px;
+                    HorizontalLayout { height: 108px; spacing: 24px;
+                        Image { source: @image-url("../assets/onix-logo.svg"); width: 108px; height: 108px; image-fit: contain; }
+                        VerticalLayout { alignment: center; spacing: 4px;
+                            Text { text: "Onix (OX)"; color: #fbf9ff; font-size: 44px; font-weight: 800; }
+                            Text { text: "Приватные диалоги для своих людей"; color: #aaa2bd; font-size: 17px; }
+                        }
+                    }
+                    Rectangle { height: 74px; border-radius: 24px; background: #ffffff06;
+                        HorizontalLayout { padding: 7px; spacing: 7px;
+                            PillButton { text: "Вход"; active: !root.register-mode; width: 50%; height: 60px; clicked => root.register-mode = false; }
+                            PillButton { text: "Регистрация"; active: root.register-mode; width: 50%; height: 60px; clicked => root.register-mode = true; }
+                        }
+                    }
+                    if root.register-mode: HorizontalLayout { height: 92px; spacing: 14px;
+                        VerticalLayout { spacing: 6px; Text { text: "Имя"; color: #c8c1d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-name-value; placeholder: "Ваше имя"; icon: "●"; } }
+                        VerticalLayout { spacing: 6px; Text { text: "Username"; color: #c8c1d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-username-value; placeholder: "@username"; icon: "@"; } }
+                    }
+                    VerticalLayout { height: 100px; spacing: 7px; Text { text: "Email"; color: #c8c1d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-email-value; placeholder: "you@example.com"; icon: "✉"; } }
+                    HorizontalLayout { height: 100px; spacing: 14px;
+                        VerticalLayout { spacing: 7px; Text { text: "Пароль"; color: #c8c1d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-pass-value; placeholder: "Ваш пароль"; icon: "▣"; password: true; } }
+                        if root.register-mode: VerticalLayout { spacing: 7px; Text { text: "Повторите пароль"; color: #c8c1d8; font-size: 14px; font-weight: 600; } Field { value <=> root.login-confirm-value; placeholder: "Ещё раз"; icon: "▣"; password: true; } }
+                    }
+                    if !root.register-mode: HorizontalLayout { height: 36px;
+                        Text { text: "Войти по QR-коду"; color: #a888ff; font-size: 14px; font-weight: 650; vertical-alignment: center; qr := TouchArea { clicked => root.simple-action("qr"); mouse-cursor: pointer; } }
+                        Rectangle { horizontal-stretch: 1; }
+                        Text { text: "Забыли пароль?"; color: #a888ff; font-size: 14px; font-weight: 650; vertical-alignment: center; forgot := TouchArea { clicked => root.simple-action("forgot"); mouse-cursor: pointer; } }
+                    }
+                    PrimaryButton { text: root.register-mode ? "Создать аккаунт" : "Войти";
+                        clicked => { if (root.register-mode) { root.register(root.login-name-value, root.login-email-value, root.login-username-value, root.login-pass-value, root.login-confirm-value); } else { root.login(root.login-email-value, root.login-pass-value); } }
+                    }
+                    Text { text: root.login-status; color: root.status-error ? #ff7184 : #aaa2bd; font-size: 14px; horizontal-alignment: center; wrap: word-wrap; }
+                }
+            }
+        }
+    }
+
+    if root.authenticated: app-page := Rectangle {
+        background: root.bg-deep;
+        VerticalLayout { spacing: 0px;
+            titlebar := Rectangle { height: 52px; background: #0a0815dd;
+                HorizontalLayout { padding-left: 18px; spacing: 10px;
+                    Image { source: @image-url("../assets/onix-logo.svg"); width: 28px; height: 28px; image-fit: contain; vertical-alignment: center; }
+                    Text { text: "Onix Messenger"; color: #f8f6ff; font-size: 16px; vertical-alignment: center; }
+                    drag := TouchArea { horizontal-stretch: 1; pointer-event(event) => { if (event.kind == PointerEventKind.down) { root.drag-window(); } } }
+                    IconButton { icon: "—"; width: 48px; height: 42px; clicked => root.minimize-window(); }
+                    IconButton { icon: "□"; width: 48px; height: 42px; clicked => root.maximize-window(); }
+                    IconButton { icon: "×"; width: 48px; height: 42px; clicked => root.close-window(); }
+                }
+            }
+            HorizontalLayout { spacing: 12px; padding: 12px;
+                side := Rectangle {
+                    width: root.menu-open ? 294px : 72px; border-radius: 26px; background: @linear-gradient(180deg, root.panel, #0f0d20);
+                    border-width: 1px; border-color: #8871ff33; clip: true;
+                    animate width { duration: 180ms; easing: ease-in-out; }
+                    side-hover := TouchArea { }
+                    VerticalLayout { padding: 12px; spacing: 9px;
+                        Rectangle { height: root.menu-open ? 104px : 52px; border-radius: 18px; background: root.menu-open ? #ffffff07 : transparent;
+                            HorizontalLayout { padding: 9px; spacing: 12px;
+                                Image { source: @image-url("../assets/onix-logo.svg"); width: 50px; height: 50px; image-fit: contain; }
+                                if root.menu-open: VerticalLayout { alignment: center; Text { text: root.current-user-name; color: white; font-size: 17px; font-weight: 700; } Text { text: root.current-user-email; color: #9c94ae; font-size: 12px; } }
+                            }
+                        }
+                        menu-trigger-box := Rectangle { height: 52px; border-radius: 26px; background: menu-trigger.has-hover ? #ffffff0c : transparent;
+                            Text { text: "☰"; color: #f4f0ff; font-size: 22px; horizontal-alignment: center; vertical-alignment: center; }
+                            menu-trigger := TouchArea { clicked => root.menu-pinned = !root.menu-pinned; mouse-cursor: pointer; }
+                        }
+                        for item[i] in ["Мой профиль", "Создать группу", "Создать канал", "Контакты", "Звонки", "Избранное", "Настройки", "Bot Filter", "Гостевой чат", "Onix Plus"]: Rectangle {
+                            height: 45px; border-radius: 14px; background: mt.has-hover ? #ffffff0b : transparent;
+                            HorizontalLayout { padding-left: 14px; spacing: 14px;
+                                Text { text: "•"; color: #c6b8ef; width: 26px; font-size: 16px; vertical-alignment: center; horizontal-alignment: center; }
+                                if root.menu-open: Text { text: item; color: #f0ecfb; font-size: 14px; font-weight: 600; vertical-alignment: center; }
+                            }
+                            mt := TouchArea { mouse-cursor: pointer; clicked => { if (i == 1) { root.modal-kind = "group"; } else if (i == 2) { root.modal-kind = "channel"; } else if (i == 6) { root.modal-kind = "settings"; } else if (i == 4) { root.simple-action("call"); } else { root.simple-action(item); } } }
+                        }
+                        Rectangle { vertical-stretch: 1; }
+                        if root.menu-open: Rectangle { height: 46px; border-radius: 15px; background: #ffffff08; HorizontalLayout { padding: 12px; Text { text: "Ночная тема"; color: #eee9fa; vertical-alignment: center; } Rectangle { horizontal-stretch: 1; } Rectangle { width: 46px; height: 24px; border-radius: 12px; background: root.accent; Rectangle { x: 23px; y: 3px; width: 18px; height: 18px; border-radius: 9px; background: white; } } } }
+                        Rectangle { height: 48px; border-radius: 15px; background: #ff405819; border-width: 1px; border-color: #ff536677;
+                            Text { text: root.menu-open ? "Выйти" : "↪"; color: #ff6678; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; }
+                            lo := TouchArea { clicked => root.logout(); mouse-cursor: pointer; }
+                        }
+                    }
+                }
+                chats-panel := Rectangle { width: 430px; border-radius: 26px; background: root.panel; border-width: 1px; border-color: #ffffff12;
+                    VerticalLayout { padding: 16px; spacing: 14px;
+                        HorizontalLayout { height: 48px; spacing: 10px;
+                            Rectangle { horizontal-stretch: 1; border-radius: 24px; background: #ffffff07; border-width: 1px; border-color: #ffffff14;
+                                HorizontalLayout { padding-left: 17px; padding-right: 14px; spacing: 10px; Text { text: "⌕"; color: #b4abc8; font-size: 19px; vertical-alignment: center; } Rectangle { horizontal-stretch: 1; if search.text == "": Text { text: "Поиск"; color: #7f788f; font-size: 14px; vertical-alignment: center; } search := TextInput { color: white; font-size: 14px; single-line: true; } } }
+                            }
+                            IconButton { icon: "✎"; clicked => root.modal-kind = "group"; }
+                        }
+                        HorizontalLayout { height: 40px; spacing: 7px;
+                            PillButton { text: "Все"; active: root.filter-name == "all"; clicked => root.filter-name = "all"; }
+                            PillButton { text: "Личные"; active: root.filter-name == "private"; clicked => root.filter-name = "private"; }
+                            PillButton { text: "Группы"; active: root.filter-name == "group"; clicked => root.filter-name = "group"; }
+                            PillButton { text: "Каналы"; active: root.filter-name == "channel"; clicked => root.filter-name = "channel"; }
+                        }
+                        Flickable { vertical-stretch: 1; viewport-height: chat-column.preferred-height;
+                            chat-column := VerticalLayout { spacing: 9px;
+                                Rectangle { height: 76px; border-radius: 20px; background: #ffffff05;
+                                    HorizontalLayout { padding: 13px; spacing: 13px; Rectangle { width: 48px; height: 48px; border-radius: 24px; background: #ffffff0d; Text { text: "▣"; color: #ded8ee; horizontal-alignment: center; vertical-alignment: center; } } VerticalLayout { alignment: center; Text { text: "Архив"; color: white; font-size: 15px; font-weight: 700; } Text { text: "Скрытые и старые диалоги"; color: #9991aa; font-size: 12px; } } }
+                                }
+                                for chat[index] in root.chats: Rectangle {
+                                    visible: root.filter-name == "all" || root.filter-name == chat.kind;
+                                    height: visible ? 82px : 0px; border-radius: 21px;
+                                    background: root.active-chat-index == index ? #ffffff0c : (ct.has-hover ? #ffffff08 : #ffffff04);
+                                    border-width: root.active-chat-index == index ? 1px : 0px; border-color: root.accent;
+                                    HorizontalLayout { padding: 12px; spacing: 12px;
+                                        Rectangle { width: 54px; height: 54px; border-radius: 27px; background: @linear-gradient(145deg, root.accent, #2aaad7); Text { text: chat.avatar-text; color: white; font-size: 18px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; } }
+                                        VerticalLayout { alignment: center; spacing: 4px; Text { text: chat.title; color: white; font-size: 15px; font-weight: 700; overflow: elide; } Text { text: chat.preview; color: #a49caf; font-size: 12px; overflow: elide; } }
+                                        VerticalLayout { width: 44px; alignment: center; Text { text: chat.time; color: #aaa2b8; font-size: 11px; horizontal-alignment: right; } if chat.unread > 0: Rectangle { width: 24px; height: 24px; border-radius: 12px; background: root.accent; Text { text: chat.unread; color: white; font-size: 11px; horizontal-alignment: center; vertical-alignment: center; } } }
+                                    }
+                                    ct := TouchArea { clicked => root.select-chat(index); mouse-cursor: pointer; }
+                                }
+                            }
+                        }
+                    }
+                }
+                chat-panel := Rectangle { horizontal-stretch: 1; border-radius: 26px; clip: true; background: @linear-gradient(145deg, root.chat-bg-a, root.chat-bg-b); border-width: 1px; border-color: #ffffff12;
+                    if root.active-chat-index < 0: Rectangle { background: @radial-gradient(circle, #7d42ff22 0%, transparent 65%);
+                        Rectangle { width: 340px; height: 250px; x: (parent.width - self.width)/2; y: (parent.height - self.height)/2; border-radius: 30px; background: #0b091bd0; border-width: 1px; border-color: #9c64ff55;
+                            VerticalLayout { padding: 30px; alignment: center; spacing: 14px; Rectangle { width: 82px; height: 82px; border-radius: 41px; background: @linear-gradient(145deg, root.accent, #6b3da9); Text { text: "•••"; color: white; font-size: 22px; horizontal-alignment: center; vertical-alignment: center; } } Text { text: "Выберите, кому хотели бы написать"; color: white; font-size: 18px; font-weight: 700; horizontal-alignment: center; wrap: word-wrap; } Text { text: "Начните диалог с друзьями или найдите новые контакты"; color: #aaa2b7; font-size: 13px; horizontal-alignment: center; wrap: word-wrap; } }
+                        }
+                    }
+                    if root.active-chat-index >= 0: VerticalLayout { spacing: 0px;
+                        Rectangle { height: 76px; background: #09081799; border-width: 1px; border-color: #ffffff12;
+                            HorizontalLayout { padding-left: 16px; padding-right: 16px; spacing: 12px;
+                                Rectangle { width: 50px; height: 50px; border-radius: 25px; background: @linear-gradient(145deg, root.accent, #21a7d5); Text { text: "O"; color: white; font-size: 18px; font-weight: 700; horizontal-alignment: center; vertical-alignment: center; } }
+                                VerticalLayout { alignment: center; Text { text: root.active-chat-title; color: white; font-size: 17px; font-weight: 700; } Text { text: root.active-chat-subtitle; color: #9e95b0; font-size: 12px; } }
+                                Rectangle { horizontal-stretch: 1; }
+                                IconButton { icon: "⌕"; }
+                                IconButton { icon: "☎"; clicked => root.simple-action("call"); }
+                                IconButton { icon: "▣"; clicked => root.simple-action("video"); }
+                                IconButton { icon: "•••"; }
+                            }
+                        }
+                        Flickable { vertical-stretch: 1; viewport-height: message-column.preferred-height;
+                            message-column := VerticalLayout { padding: 22px; spacing: 10px;
+                                Rectangle { height: 32px; background: transparent; Text { text: "Сегодня"; color: #c6bfd4; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; } }
+                                for msg in root.messages: HorizontalLayout { alignment: msg.mine ? end : start; height: bubble.height;
+                                    bubble := Rectangle { width: min(590px, max(220px, msg.body.length * 8px)); min-height: 74px; border-radius: 22px; background: msg.mine ? @linear-gradient(145deg, #6d4de3, #513ca9) : #27233a; border-width: 1px; border-color: msg.mine ? #a88bff55 : #ffffff16;
+                                        VerticalLayout { padding: 14px; spacing: 6px; if !msg.mine: Text { text: msg.sender; color: #a989ff; font-size: 12px; font-weight: 700; } Text { text: msg.body; color: white; font-size: 15px; wrap: word-wrap; } Text { text: msg.time; color: #c2bbcf; font-size: 10px; horizontal-alignment: right; } }
+                                    }
+                                }
+                            }
+                        }
+                        Rectangle { height: 82px; background: #090817bb; border-width: 1px; border-color: #ffffff12;
+                            HorizontalLayout { padding: 13px; spacing: 10px;
+                                IconButton { icon: "+"; clicked => root.attach-file(); }
+                                Rectangle { horizontal-stretch: 1; border-radius: 26px; background: #ffffff08; border-width: 1px; border-color: #ffffff16;
+                                    HorizontalLayout { padding-left: 18px; padding-right: 12px; Rectangle { horizontal-stretch: 1; if composer.text == "": Text { text: "Сообщение"; color: #7f788f; font-size: 15px; vertical-alignment: center; } composer := TextInput { text: ""; color: white; font-size: 15px; single-line: true; accepted => { root.send-message(self.text); self.text = ""; } } } }
+                                }
+                                IconButton { icon: "☺"; }
+                                IconButton { icon: "●"; clicked => { root.send-message(composer.text); composer.text = ""; } }
+                            }
+                        }
+                    }
+                    if root.main-status != "": Rectangle { height: 34px; y: parent.height - self.height; background: root.status-error ? #7b1f35dd : #080716dd; Text { text: root.main-status; color: root.status-error ? #ff9aaa : #c8c0d6; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; } }
+                }
+            }
+        }
+    }
+
+    if root.modal-kind != "": Rectangle { background: #00000088;
+        modal := Rectangle { width: root.modal-kind == "settings" ? 560px : 600px; height: root.modal-kind == "settings" ? 430px : 470px; x: (parent.width-self.width)/2; y: (parent.height-self.height)/2; border-radius: 28px; background: #141126; border-width: 1px; border-color: #8c6cff66; drop-shadow-blur: 36px; drop-shadow-color: #000000aa;
+            VerticalLayout { padding: 26px; spacing: 16px;
+                HorizontalLayout { height: 44px; Text { text: root.modal-kind == "settings" ? "Оформление Onix" : (root.modal-kind == "channel" ? "Создать канал" : "Создать группу"); color: white; font-size: 22px; font-weight: 750; vertical-alignment: center; } Rectangle { horizontal-stretch: 1; } IconButton { icon: "×"; clicked => root.modal-kind = ""; } }
+                if root.modal-kind == "settings": VerticalLayout { spacing: 12px;
+                    Text { text: "Тема приложения"; color: #aaa2b8; font-size: 13px; }
+                    for theme in ["ember", "violet", "aurora", "midnight"]: Rectangle { height: 60px; border-radius: 17px; background: root.theme-name == theme ? #ffffff10 : #ffffff05; border-width: 1px; border-color: root.theme-name == theme ? root.accent : #ffffff10;
+                        HorizontalLayout { padding: 12px; spacing: 12px; Rectangle { width: 38px; height: 38px; border-radius: 19px; background: theme == "ember" ? @linear-gradient(145deg,#8e213f,#6c3cff) : theme == "violet" ? @linear-gradient(145deg,#4d2ead,#9b5cff) : theme == "aurora" ? @linear-gradient(145deg,#159f84,#20468d) : @linear-gradient(145deg,#172c68,#0a1020); } Text { text: theme == "ember" ? "Ember — бордово-фиолетовая" : theme == "violet" ? "Violet — глубокий фиолетовый" : theme == "aurora" ? "Aurora — бирюзовая" : "Midnight — синяя ночь"; color: white; font-size: 14px; vertical-alignment: center; } }
+                        th := TouchArea { clicked => { root.theme-name = theme; root.theme-changed(theme); } mouse-cursor: pointer; }
+                    }
+                }
+                if root.modal-kind != "settings": VerticalLayout { spacing: 9px;
+                    Text { text: "Название"; color: #c8c1d8; font-size: 13px; } Field { value <=> root.create-title-value; placeholder: root.modal-kind == "channel" ? "Название канала" : "Название группы"; icon: "✦"; }
+                    Text { text: "Описание"; color: #c8c1d8; font-size: 13px; } Rectangle { height: 120px; border-radius: 20px; background: #ffffff06; border-width: 1px; border-color: #6f628d80; TextInput { text <=> root.create-description-value; color: white; font-size: 14px; wrap: word-wrap; x: 16px; y: 12px; width: parent.width-32px; height: parent.height-24px; } }
+                    Rectangle { vertical-stretch: 1; }
+                    PrimaryButton { text: "Создать"; clicked => root.create-conversation(root.modal-kind, root.create-title-value, root.create-description-value); }
+                }
+            }
+        }
+    }
+}
