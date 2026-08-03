@@ -40,7 +40,12 @@ impl ApiClient {
         let bytes = response.bytes()?;
         if !status.is_success() {
             let value: Value = serde_json::from_slice(&bytes).unwrap_or_default();
-            return Err(anyhow!(value.get("message").and_then(Value::as_str).unwrap_or("Ошибка сервера Onix")));
+            let message = value
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or("Ошибка сервера Onix")
+                .to_owned();
+            return Err(anyhow!(message));
         }
         serde_json::from_slice(&bytes).context("не удалось разобрать ответ Onix")
     }
