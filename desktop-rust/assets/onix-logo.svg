@@ -1,0 +1,17 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="32" y1="20" x2="220" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C8DFF"/><stop offset="0.55" stop-color="#2947D8"/><stop offset="1" stop-color="#7D35FF"/>
+    </linearGradient>
+    <linearGradient id="face" x1="65" y1="54" x2="192" y2="202" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F9FFFF"/><stop offset="1" stop-color="#B9DAFF"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="18" y="18" width="220" height="220" rx="58" fill="url(#bg)"/>
+  <rect x="27" y="27" width="202" height="202" rx="49" stroke="#73D8FF" stroke-opacity=".55" stroke-width="3"/>
+  <path filter="url(#glow)" d="M62 69L91 88C102 82 114 79 128 79C142 79 154 82 165 88L194 69L187 119C193 131 196 144 194 157C190 184 163 207 128 207C93 207 66 184 62 157C60 144 63 131 69 119L62 69Z" fill="url(#face)" stroke="#E8FFFF" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M83 137C98 125 112 130 116 145C105 153 91 151 83 137Z" fill="#2436A5"/>
+  <path d="M173 137C158 125 144 130 140 145C151 153 165 151 173 137Z" fill="#2436A5"/>
+  <path d="M119 168H137L128 178L119 168Z" fill="#4D39C9"/>
+</svg>

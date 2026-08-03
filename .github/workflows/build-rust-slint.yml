@@ -1,0 +1,34 @@
+name: Build Rust Slint Onix
+on:
+  push:
+    branches: [onix-rust-slint-v161]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop-rust
+      - name: Build Windows x64
+        working-directory: desktop-rust
+        run: cargo build --release
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/OnixMessenger | Out-Null
+          Copy-Item desktop-rust/target/release/onix-messenger.exe dist/OnixMessenger/OnixMessenger.exe
+          Copy-Item desktop-rust/README.txt dist/OnixMessenger/README.txt
+          (Get-FileHash dist/OnixMessenger/OnixMessenger.exe -Algorithm SHA256).Hash.ToLower() + "  OnixMessenger.exe" | Set-Content dist/OnixMessenger/SHA256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OnixMessenger-v162-rust-slint-windows-x64
+          path: dist/OnixMessenger
+          if-no-files-found: error
