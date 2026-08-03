@@ -15,6 +15,8 @@ use std::{env, fs, path::{Path, PathBuf}, rc::Rc, sync::{Arc, atomic::{AtomicBoo
 
 slint::include_modules!();
 
+type AppWindow = OnixWindow;
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(default)]
 struct Settings { session: String, theme: String }
