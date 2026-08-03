@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 fn main() {
     println!("cargo:rerun-if-changed=ui/app-window.slint");
-    println!("cargo:rerun-if-changed=ui/app-window-v162.slint");
+    println!("cargo:rerun-if-changed=ui/login-v162.fragment");
     println!("cargo:rerun-if-changed=assets/onix-logo.svg");
 
     let mut source = fs::read_to_string("ui/app-window.slint").expect("cannot read Slint UI");
@@ -31,7 +31,15 @@ fn main() {
         source = source.replace(from, to);
     }
 
+    let old_start = "    Rectangle {\n        background: @radial-gradient(circle, #6d47ff38 0%, transparent 48%);";
+    let old_end = "\n    if root.authenticated: app-page := Rectangle {";
+    let start = source.find(old_start).expect("old login start not found");
+    let end = source[start..].find(old_end).map(|offset| start + offset).expect("old login end not found");
+    let login = fs::read_to_string("ui/login-v162.fragment").expect("cannot read v162 login fragment");
+    source.replace_range(start..end, login.trim_end());
+    source = source.replace("export component AppWindow inherits Window", "export component OnixWindow inherits Window");
+
     let generated = PathBuf::from("ui/app-window.generated.slint");
     fs::write(&generated, source).expect("cannot write generated Slint UI");
-    slint_build::compile("ui/app-window-v162.slint").expect("Slint UI compilation failed");
+    slint_build::compile(generated).expect("Slint UI compilation failed");
 }
